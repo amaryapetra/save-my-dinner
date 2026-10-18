@@ -110,7 +110,8 @@ const RESCUE_SCHEMA = {
 function generateFallbackCulinaryRescue(
   problemDescription = '',
   issueCategory = '',
-  dishName = ''
+  dishName = '',
+  hasImage = false
 ): RescueResponse {
   const query = `${problemDescription} ${issueCategory} ${dishName}`.toLowerCase();
 
@@ -118,7 +119,9 @@ function generateFallbackCulinaryRescue(
   if (query.includes('split') || query.includes('curdl') || query.includes('separat') || query.includes('butter') || query.includes('cream')) {
     return {
       foodIdentified: dishName || 'Cream or Butter Sauce',
-      visibleObservation: 'The sauce has separated into an oily puddle with little grainy clumps.',
+      visibleObservation: hasImage
+        ? 'The sauce has separated into an oily puddle with little grainy clumps.'
+        : 'Reported by cook: The sauce broke apart into melted grease and curdled clumps.',
       diagnosis: 'The sauce got too hot, causing the butter and cream to break apart into oil and curdled bits.',
       urgencyLevel: 'immediate',
       canBeSaved: true,
@@ -156,7 +159,9 @@ function generateFallbackCulinaryRescue(
   if (query.includes('burn') || query.includes('scorch') || query.includes('char') || query.includes('smoke')) {
     return {
       foodIdentified: dishName || 'Food in Pan or Pot',
-      visibleObservation: 'Blackened spots on the bottom of the pan with smoke and a burnt smell.',
+      visibleObservation: hasImage
+        ? 'Blackened spots on the bottom of the pan with smoke and a burnt smell.'
+        : 'Reported by cook: Burning smell and dark spots catching on the bottom of the pan.',
       diagnosis: 'The burner was too high, causing the bottom of the food and garlic to catch fire and scorch.',
       urgencyLevel: 'immediate',
       canBeSaved: true,
@@ -194,7 +199,9 @@ function generateFallbackCulinaryRescue(
   if (query.includes('salt') || query.includes('salty')) {
     return {
       foodIdentified: dishName || 'Over-salted Food or Soup',
-      visibleObservation: 'Food looks normal, but tastes way too salty on the tongue.',
+      visibleObservation: hasImage
+        ? 'Food looks standard in the pot, but tastes way too salty on the tongue.'
+        : 'Reported by cook: The broth or food was accidentally over-salted.',
       diagnosis: 'There is too much salt for the amount of liquid currently in the pot.',
       urgencyLevel: 'moderate',
       canBeSaved: true,
@@ -229,7 +236,9 @@ function generateFallbackCulinaryRescue(
   if (query.includes('water') || query.includes('brown') || query.includes('soggy') || query.includes('steaming')) {
     return {
       foodIdentified: dishName || 'Watery Pan or Skillet Dish',
-      visibleObservation: 'Grayish water has pooled at the bottom of the pan, and the food is boiling instead of frying.',
+      visibleObservation: hasImage
+        ? 'Grayish water has pooled at the bottom of the pan, and the food is boiling instead of frying.'
+        : 'Reported by cook: Extra liquid has pooled in the pan and food is steaming instead of crisping.',
       diagnosis: 'Too much cold food was dumped into the skillet at once, which trapped steam and boiled the food instead of crisping it.',
       urgencyLevel: 'moderate',
       canBeSaved: true,
@@ -267,7 +276,9 @@ function generateFallbackCulinaryRescue(
   // Default general rescue
   return {
     foodIdentified: dishName || 'Food in Progress',
-    visibleObservation: 'The food needs a quick adjustment to heat, moisture, or seasoning.',
+    visibleObservation: hasImage
+      ? 'The food needs a quick adjustment to heat, moisture, or seasoning.'
+      : 'Reported by cook: Food needs a quick balance of heat, moisture, or seasoning.',
     diagnosis: 'The heat or liquid balance was slightly off, but it is easy to get back on track.',
     urgencyLevel: 'moderate',
     canBeSaved: true,
@@ -307,6 +318,7 @@ app.post('/api/rescue', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Please provide either a photo of your food or a description of what is going wrong.' });
     }
 
+    const hasImage = Boolean(imageBase64);
     const parts: any[] = [];
 
     if (imageBase64) {
@@ -320,11 +332,18 @@ app.post('/api/rescue', async (req: Request, res: Response) => {
     }
 
     const promptText = `EMERGENCY COOKING TROUBLESHOOTING REQUEST:
-Dish Name: ${dishName || 'Identify from photo/context'}
-Problem Description: ${problemDescription || 'Diagnose from photo'}
+Dish Name: ${dishName || (hasImage ? 'Identify from photo/context' : 'Identify from problem description')}
+Problem Description: ${problemDescription || (hasImage ? 'Diagnose from photo' : 'Not specified')}
 Issue Category: ${issueCategory || 'Not specified'}
+Has Photo Attached: ${hasImage ? 'YES (Examine the image)' : 'NO (User only entered text/voice, NO PHOTO ATTACHED)'}
 
-Analyze image and problem carefully. Distinguish visible cues from inferences. Output structured JSON matching schema.`;
+CRITICAL RULES FOR THIS REQUEST:
+${
+  hasImage
+    ? '1. The user attached a photo. In visibleObservation, describe the directly visible cues you see in the food photo.'
+    : '1. IMPORTANT: The user DID NOT ATTACH A PHOTO. In visibleObservation, do NOT claim to see a photo or say "what we see". Instead, write: "Reported by cook: <brief summary of what they said happened>".'
+}
+2. Output structured JSON matching the schema with simple everyday words only.`;
 
     parts.push({ text: promptText });
 
@@ -359,7 +378,7 @@ Analyze image and problem carefully. Distinguish visible cues from inferences. O
 
     // If upstream API is experiencing a temporary 503/504 gateway spike, provide immediate culinary rescue
     if (!parsedData) {
-      parsedData = generateFallbackCulinaryRescue(problemDescription, issueCategory, dishName);
+      parsedData = generateFallbackCulinaryRescue(problemDescription, issueCategory, dishName, hasImage);
     }
 
     return res.json({

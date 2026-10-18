@@ -159,11 +159,26 @@ export const RescueResultsView: React.FC<RescueResultsViewProps> = ({
             </p>
 
             {/* Clearly qualified observation in plain words */}
-            <div className="flex items-start space-x-2 text-xs text-stone-500 pt-1 border-t border-stone-200/60">
-              <Eye className="w-3.5 h-3.5 text-stone-400 shrink-0 mt-0.5" />
-              <span>
-                <strong className="text-stone-700">What we see in your photo:</strong> {diagnosis.visibleObservation}
-              </span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-stone-500 pt-1.5 border-t border-stone-200/60">
+              <div className="flex items-start space-x-2">
+                <Eye className="w-3.5 h-3.5 text-stone-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-stone-700">
+                    {originalImage ? 'What we see in your photo:' : 'Based on what you described:'}
+                  </strong>{' '}
+                  {diagnosis.visibleObservation}
+                </span>
+              </div>
+              {!originalImage && (
+                <button
+                  type="button"
+                  onClick={onOpenLiveCamera}
+                  className="inline-flex items-center space-x-1 text-emerald-700 hover:text-emerald-800 font-bold hover:underline shrink-0 text-[11px] cursor-pointer"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>+ Add a photo of your pan</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -349,16 +364,41 @@ export const RescueResultsView: React.FC<RescueResultsViewProps> = ({
 
         {/* If user clicked "Yes, saved it!" */}
         {fixStatus === 'saved' && (
-          <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-4 animate-fade-in">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-              <Sparkles className="w-6 h-6 animate-spin" />
+          <div className="p-6 rounded-3xl bg-gradient-to-b from-emerald-50 to-teal-50 border border-emerald-200 text-center space-y-4 animate-fade-in shadow-xs">
+            {/* Fun Celebration Vector Illustration */}
+            <div className="w-24 h-24 mx-auto drop-shadow-sm">
+              <svg viewBox="0 0 120 120" className="w-full h-full">
+                {/* Confetti */}
+                <circle cx="20" cy="30" r="4" fill="#F59E0B" />
+                <rect x="90" y="25" width="7" height="7" rx="2" fill="#EC4899" transform="rotate(20 90 25)" />
+                <rect x="25" y="85" width="8" height="5" rx="1.5" fill="#3B82F6" transform="rotate(-15 25 85)" />
+                <circle cx="100" cy="80" r="4" fill="#10B981" />
+                <path d="M50 15 L53 23 L62 25 L55 31 L57 40 L50 35 L43 40 L45 31 L38 25 L47 23 Z" fill="#FBBF24" />
+                
+                {/* Cheerful Golden Pan */}
+                <rect x="75" y="65" width="35" height="10" rx="5" fill="#374151" />
+                <circle cx="55" cy="70" r="32" fill="#1F2937" />
+                <circle cx="55" cy="70" r="26" fill="#F59E0B" />
+                
+                {/* Happy Face */}
+                <circle cx="48" cy="67" r="3" fill="#1F2937" />
+                <circle cx="62" cy="67" r="3" fill="#1F2937" />
+                <path d="M50 73 Q55 80 60 73" stroke="#1F2937" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                <circle cx="44" cy="72" r="2.5" fill="#EF4444" opacity="0.6" />
+                <circle cx="66" cy="72" r="2.5" fill="#EF4444" opacity="0.6" />
+                
+                {/* Sparkles */}
+                <path d="M25 45 Q30 45 30 40 Q30 45 35 45 Q30 45 30 50 Q30 45 25 45 Z" fill="#F59E0B" />
+                <path d="M80 40 Q85 40 85 35 Q85 40 90 40 Q85 40 85 45 Q85 40 80 40 Z" fill="#F59E0B" />
+              </svg>
             </div>
+
             <div className="space-y-1">
-              <h3 className="text-xl font-serif font-bold text-emerald-900">
-                Dinner is officially saved!
+              <h3 className="text-2xl font-serif font-bold text-emerald-950">
+                Dinner is officially saved! 🎉
               </h3>
-              <p className="text-emerald-700 text-sm max-w-md mx-auto">
-                Great job fixing it quickly. Turn off the heat and enjoy your dinner!
+              <p className="text-emerald-800 text-sm max-w-sm mx-auto">
+                Turn down the heat, grab your plate, and enjoy your meal!
               </p>
             </div>
 
